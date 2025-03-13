@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/RNS-1/Voice-Calc/static/css/main.9039cf9d.css",
+    "main.js": "/RNS-1/Voice-Calc/static/js/main.d5dce8d9.js",
+    "static/js/453.4e42692d.chunk.js": "/RNS-1/Voice-Calc/static/js/453.4e42692d.chunk.js",
+    "index.html": "/RNS-1/Voice-Calc/index.html",
+    "main.9039cf9d.css.map": "/RNS-1/Voice-Calc/static/css/main.9039cf9d.css.map",
+    "main.d5dce8d9.js.map": "/RNS-1/Voice-Calc/static/js/main.d5dce8d9.js.map",
+    "453.4e42692d.chunk.js.map": "/RNS-1/Voice-Calc/static/js/453.4e42692d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9039cf9d.css",
+    "static/js/main.d5dce8d9.js"
+  ]
+}
