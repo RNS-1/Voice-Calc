@@ -2,7 +2,7 @@
   "name": "voice-calc",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/RNS-1/Voice-Calc",
+  "homepage": "https://rns-1.github.io/Voice-Calc/",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
