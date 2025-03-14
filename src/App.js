@@ -11,6 +11,9 @@ const AICalculator = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [manualInput, setManualInput] = useState('');
   const [showScientificKeypad, setShowScientificKeypad] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -25,7 +28,7 @@ const AICalculator = () => {
         const input = event.results[0][0].transcript;
         setTranscript(input);
         setProcessingAnimation(true);
-        
+
         // Simulate AI processing time
         setTimeout(() => {
           processVoiceInput(input);
@@ -45,19 +48,19 @@ const AICalculator = () => {
   const processVoiceInput = (input) => {
     // Convert to lowercase for easier detection
     const lowerInput = input.toLowerCase();
-    
+
     try {
       let calculatedResult = '';
-      
+
       // Check for area calculations
-      if (lowerInput.includes('area') || lowerInput.includes('square') || 
-          lowerInput.includes('rectangle') || lowerInput.includes('circle') || 
+      if (lowerInput.includes('area') || lowerInput.includes('square') ||
+          lowerInput.includes('rectangle') || lowerInput.includes('circle') ||
           lowerInput.includes('triangle')) {
         calculatedResult = calculateArea(lowerInput);
-      } 
+      }
       // Check for currency/money calculations
-      else if (lowerInput.includes('dollar') || lowerInput.includes('euro') || 
-               lowerInput.includes('pound') || lowerInput.includes('yen') || 
+      else if (lowerInput.includes('dollar') || lowerInput.includes('euro') ||
+               lowerInput.includes('pound') || lowerInput.includes('yen') ||
                lowerInput.includes('money') || lowerInput.includes('currency')) {
         calculatedResult = calculateMoney(lowerInput);
       }
@@ -65,10 +68,10 @@ const AICalculator = () => {
       else {
         calculatedResult = calculateScientific(lowerInput);
       }
-      
+
       setResult(calculatedResult);
       speakResult(calculatedResult);
-      
+
       // Add to history
       setHistory(prev => [...prev, { input, result: calculatedResult, timestamp: new Date().toLocaleTimeString() }]);
     } catch (error) {
@@ -81,14 +84,14 @@ const AICalculator = () => {
   // Process manual input
   const processManualInput = () => {
     if (!manualInput.trim()) return;
-    
+
     setProcessingAnimation(true);
-    
+
     // Simulate AI processing time
     setTimeout(() => {
       try {
         let calculatedResult = '';
-        
+
         if (calculationType === 'area') {
           calculatedResult = calculateArea(manualInput);
         } else if (calculationType === 'money') {
@@ -96,20 +99,20 @@ const AICalculator = () => {
         } else {
           calculatedResult = calculateScientific(manualInput);
         }
-        
+
         setResult(calculatedResult);
-        
+
         // Add to history
-        setHistory(prev => [...prev, { 
-          input: manualInput, 
-          result: calculatedResult, 
+        setHistory(prev => [...prev, {
+          input: manualInput,
+          result: calculatedResult,
           timestamp: new Date().toLocaleTimeString(),
           isManual: true
         }]);
       } catch (error) {
         setResult("Invalid input. Please check your expression and try again.");
       }
-      
+
       setProcessingAnimation(false);
     }, 400);
   };
@@ -124,7 +127,7 @@ const AICalculator = () => {
         // If direct evaluation fails, continue with word processing
       }
     }
-    
+
     // Replace words with operators for voice or text input
     let processedInput = input
       .replace(/plus/g, '+')
@@ -136,6 +139,7 @@ const AICalculator = () => {
       .replace(/squared/g, '^2')
       .replace(/cubed/g, '^3')
       .replace(/square root of/g, 'sqrt(')
+      .replace(/sqrt/g, 'sqrt(')
       .replace(/cubic root of/g, 'cbrt(')
       .replace(/sine of/g, 'sin(')
       .replace(/cosine of/g, 'cos(')
@@ -156,15 +160,27 @@ const AICalculator = () => {
       .replace(/modulo/g, '%')
       .replace(/degrees/g, 'deg')
       .replace(/radians/g, 'rad')
+      .replace(/one/g, '1')
+      .replace(/two/g, '2')
+      .replace(/three/g, '3')
+      .replace(/four/g, '4')
+      .replace(/five/g, '5')
+      .replace(/six/g, '6')
+      .replace(/seven/g, '7')
+      .replace(/eight/g, '8')
+      .replace(/nine/g, '9')
+      .replace(/ten/g, '10')
+      .replace(/percent/g, '%')
+
       .replace(/pi/g, 'PI');
-    
+
     // Close any open parentheses
     const openParenCount = (processedInput.match(/\(/g) || []).length;
     const closeParenCount = (processedInput.match(/\)/g) || []).length;
     if (openParenCount > closeParenCount) {
       processedInput += ')'.repeat(openParenCount - closeParenCount);
     }
-    
+
     try {
       // Try evaluating as is (for manual input expressions)
       const result = math.evaluate(processedInput);
@@ -190,7 +206,7 @@ const AICalculator = () => {
         }
       }
     }
-    
+
     throw new Error("No mathematical expression found");
   };
 
@@ -232,7 +248,7 @@ const AICalculator = () => {
         return `${(Math.PI * a * b).toFixed(2)} square units`;
       }
     }
-    
+
     throw new Error("Couldn't calculate area. Please specify shape and dimensions.");
   };
 
@@ -241,32 +257,118 @@ const AICalculator = () => {
     // Simple currency conversion
     if (input.includes('convert')) {
       // This is a simplified example. In a real app, you'd use current exchange rates
-      if (input.includes('dollar') && input.includes('euro')) {
-        const amount = extractNumber(input);
-        if (amount) {
+      const amount = extractNumber(input);
+      
+      if (!amount) {
+        return "Please specify an amount to convert.";
+      }
+      
+      // Dollar to other currencies
+      if (input.includes('dollar') || input.includes('usd')) {
+        if (input.includes('euro') || input.includes('eur')) {
           return `${amount} USD is approximately ${(amount * 0.85).toFixed(2)} EUR`;
-        }
-      } else if (input.includes('euro') && input.includes('dollar')) {
-        const amount = extractNumber(input);
-        if (amount) {
-          return `${amount} EUR is approximately ${(amount * 1.18).toFixed(2)} USD`;
+        } else if (input.includes('rupee') || input.includes('inr')) {
+          return `${amount} USD is approximately ${(amount * 76.5).toFixed(2)} INR`;
+        } else if (input.includes('yuan') || input.includes('cny')) {
+          return `${amount} USD is approximately ${(amount * 6.45).toFixed(2)} CNY`;
+        } else if (input.includes('pound') || input.includes('gbp')) {
+          return `${amount} USD is approximately ${(amount * 0.72).toFixed(2)} GBP`;
+        } else if (input.includes('yen') || input.includes('jpy')) {
+          return `${amount} USD is approximately ${(amount * 110.5).toFixed(2)} JPY`;
         }
       }
+      
+      // Euro to other currencies
+      else if (input.includes('euro') || input.includes('eur')) {
+        if (input.includes('dollar') || input.includes('usd')) {
+          return `${amount} EUR is approximately ${(amount * 1.18).toFixed(2)} USD`;
+        } else if (input.includes('rupee') || input.includes('inr')) {
+          return `${amount} EUR is approximately ${(amount * 90.1).toFixed(2)} INR`;
+        } else if (input.includes('yuan') || input.includes('cny')) {
+          return `${amount} EUR is approximately ${(amount * 7.6).toFixed(2)} CNY`;
+        } else if (input.includes('pound') || input.includes('gbp')) {
+          return `${amount} EUR is approximately ${(amount * 0.85).toFixed(2)} GBP`;
+        } else if (input.includes('yen') || input.includes('jpy')) {
+          return `${amount} EUR is approximately ${(amount * 130.2).toFixed(2)} JPY`;
+        }
+      }
+      
+      // Rupee to other currencies
+      else if (input.includes('rupee') || input.includes('inr')) {
+        if (input.includes('dollar') || input.includes('usd')) {
+          return `${amount} INR is approximately ${(amount * 0.013).toFixed(2)} USD`;
+        } else if (input.includes('euro') || input.includes('eur')) {
+          return `${amount} INR is approximately ${(amount * 0.011).toFixed(2)} EUR`;
+        } else if (input.includes('yuan') || input.includes('cny')) {
+          return `${amount} INR is approximately ${(amount * 0.084).toFixed(2)} CNY`;
+        } else if (input.includes('pound') || input.includes('gbp')) {
+          return `${amount} INR is approximately ${(amount * 0.0094).toFixed(2)} GBP`;
+        } else if (input.includes('yen') || input.includes('jpy')) {
+          return `${amount} INR is approximately ${(amount * 1.44).toFixed(2)} JPY`;
+        }
+      }
+      
+      // Yuan to other currencies
+      else if (input.includes('yuan') || input.includes('cny')) {
+        if (input.includes('dollar') || input.includes('usd')) {
+          return `${amount} CNY is approximately ${(amount * 0.155).toFixed(2)} USD`;
+        } else if (input.includes('euro') || input.includes('eur')) {
+          return `${amount} CNY is approximately ${(amount * 0.131).toFixed(2)} EUR`;
+        } else if (input.includes('rupee') || input.includes('inr')) {
+          return `${amount} CNY is approximately ${(amount * 11.86).toFixed(2)} INR`;
+        } else if (input.includes('pound') || input.includes('gbp')) {
+          return `${amount} CNY is approximately ${(amount * 0.112).toFixed(2)} GBP`;
+        } else if (input.includes('yen') || input.includes('jpy')) {
+          return `${amount} CNY is approximately ${(amount * 17.13).toFixed(2)} JPY`;
+        }
+      }
+      
+      // Pound to other currencies
+      else if (input.includes('pound') || input.includes('gbp')) {
+        if (input.includes('dollar') || input.includes('usd')) {
+          return `${amount} GBP is approximately ${(amount * 1.39).toFixed(2)} USD`;
+        } else if (input.includes('euro') || input.includes('eur')) {
+          return `${amount} GBP is approximately ${(amount * 1.18).toFixed(2)} EUR`;
+        } else if (input.includes('rupee') || input.includes('inr')) {
+          return `${amount} GBP is approximately ${(amount * 106.4).toFixed(2)} INR`;
+        } else if (input.includes('yuan') || input.includes('cny')) {
+          return `${amount} GBP is approximately ${(amount * 8.96).toFixed(2)} CNY`;
+        } else if (input.includes('yen') || input.includes('jpy')) {
+          return `${amount} GBP is approximately ${(amount * 153.5).toFixed(2)} JPY`;
+        }
+      }
+      
+      // Yen to other currencies
+      else if (input.includes('yen') || input.includes('jpy')) {
+        if (input.includes('dollar') || input.includes('usd')) {
+          return `${amount} JPY is approximately ${(amount * 0.0091).toFixed(4)} USD`;
+        } else if (input.includes('euro') || input.includes('eur')) {
+          return `${amount} JPY is approximately ${(amount * 0.0077).toFixed(4)} EUR`;
+        } else if (input.includes('rupee') || input.includes('inr')) {
+          return `${amount} JPY is approximately ${(amount * 0.69).toFixed(2)} INR`;
+        } else if (input.includes('yuan') || input.includes('cny')) {
+          return `${amount} JPY is approximately ${(amount * 0.058).toFixed(3)} CNY`;
+        } else if (input.includes('pound') || input.includes('gbp')) {
+          return `${amount} JPY is approximately ${(amount * 0.0065).toFixed(4)} GBP`;
+        }
+      }
+      
+      return "I can convert between USD, EUR, INR, CNY, GBP, and JPY. Please specify which currencies.";
     }
-    
+
     // Interest calculation
     if (input.includes('interest')) {
       const principal = extractNumber(input, 'principal') || extractNumber(input);
       const rate = extractNumber(input, 'rate') || extractNumber(input, 'percent');
       const time = extractNumber(input, 'year') || extractNumber(input, 'time');
-      
+
       if (principal && rate) {
         const timeValue = time || 1;
         const interest = principal * (rate/100) * timeValue;
         return `Interest: ${interest.toFixed(2)}, Total: ${(principal + interest).toFixed(2)}`;
       }
     }
-    
+
     // Default to basic math if specific money calculation not found
     return calculateScientific(input);
   };
@@ -274,7 +376,7 @@ const AICalculator = () => {
   // Helper function to extract numbers from voice input
   const extractNumber = (input, keyword = '') => {
     const words = input.split(' ');
-    
+
     if (keyword) {
       // Find keyword and get the number after it
       const keywordIndex = words.findIndex(word => word.includes(keyword));
@@ -284,13 +386,13 @@ const AICalculator = () => {
         if (!isNaN(number)) return number;
       }
     }
-    
+
     // Try to extract any number
     for (let word of words) {
       const number = parseFloat(word);
       if (!isNaN(number)) return number;
     }
-    
+
     return null;
   };
 
@@ -349,6 +451,10 @@ const AICalculator = () => {
     return darkMode ? darkClass : lightClass;
   };
 
+  const toggleNotes = () => {
+    setShowNotes(!showNotes);
+  };
+
   // Scientific keypad functions
   const scientificFunctions = [
     { symbol: 'sin()', insertValue: 'sin(' },
@@ -398,280 +504,309 @@ const AICalculator = () => {
     }
   };
 
-  return (
-    <div className={`flex flex-col min-h-screen ${getThemeClass('bg-gray-900 text-white', 'bg-gray-100 text-gray-800')}`}>
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-0 left-0 w-full h-full opacity-20 ${darkMode ? 'opacity-30' : 'opacity-10'}`}>
-          {Array(20).fill().map((_, i) => (
-            <div 
-              key={i}
-              className={`absolute rounded-full ${getThemeClass('bg-blue-500', 'bg-blue-400')}`}
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                width: `${Math.random() * 200 + 50}px`,
-                height: `${Math.random() * 200 + 50}px`,
-                opacity: Math.random() * 0.3,
-                filter: 'blur(40px)',
-                animation: `float ${Math.random() * 10 + 10}s infinite linear`
-              }}
-            />
-          ))}
-        </div>
-      </div>
+  // Handle chat input
+  const handleChatInput = (e) => {
+    if (e.key === 'Enter') {
+      const message = e.target.value;
+      if (message.trim()) {
+        setChatMessages(prev => [...prev, { sender: 'user', text: message }]);
+        e.target.value = '';
 
-      <div className="container mx-auto p-6 relative z-10 flex flex-col items-center">
-        <div className="w-full max-w-3xl">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">AI Voice Calculator</h1>
+        // Simulate bot response
+        setTimeout(() => {
+          setChatMessages(prev => [...prev, { sender: 'bot', text: `Echo: ${message}` }]);
+        }, 500);
+      }
+    }
+  };
+
+  const notesContent = {
+    scientific: {
+      title: "Scientific Calculator Guide",
+      sections: [
+        {
+          title: "Basic Operations",
+          examples: [
+            "2 + 3 = 5",
+            "10 - 5 = 5",
+            "4 * 5 = 20",
+            "20 / 4 = 5"
+          ]
+        },
+        {
+          title: "Scientific Functions",
+          examples: [
+            "sin(30) = 0.5 (in degrees mode)",
+            "cos(60) = 0.5 (in degrees mode)",
+            "tan(45) = 1 (in degrees mode)",
+            "log(100) = 2 (base 10)",
+            "sqrt(16) = 4",
+            "2^3 = 8"
+          ]
+        },
+        {
+          title: "Voice Commands",
+          examples: [
+            "Say: 'two plus three'",
+            "Say: 'sine of thirty degrees'",
+            "Say: 'square root of sixteen'",
+            "Say: 'log of one hundred'",
+            "Say: 'five to the power of three'",
+            "Say: 'cosine of sixty degrees'"
+          ]
+        }
+      ]
+    },
+    area: {
+      title: "Area Calculator Guide",
+      sections: [
+        {
+          title: "Shapes & Formulas",
+          examples: [
+            "Square: side² = area",
+            "Rectangle: length × width = area",
+            "Circle: π × radius² = area",
+            "Triangle: (base × height) ÷ 2 = area",
+            "Trapezoid: ((a + b) × height) ÷ 2 = area",
+            "Ellipse: π × a × b = area"
+          ]
+        },
+        {
+          title: "Voice Commands",
+          examples: [
+            "Say: 'area of square with side 5'",
+            "Say: 'area of rectangle with length 4 and width 7'",
+            "Say: 'area of circle with radius 3'",
+            "Say: 'area of triangle with base 6 and height 8'",
+            "Say: 'area of trapezoid with a 5 b 7 height 4'",
+            "Say: 'area of ellipse with a 5 and b 3'"
+          ]
+        }
+      ]
+    },
+    money: {
+      title: "Money Calculator Guide",
+      sections: [
+        {
+          title: "Currency Conversion",
+          examples: [
+            "USD to EUR: $1 ≈ €0.93",
+            "EUR to USD: €1 ≈ $1.08",
+            "USD to GBP: $1 ≈ £0.79",
+            "USD to JPY: $1 ≈ ¥151.67"
+          ]
+        },
+        {
+          title: "Financial Calculations",
+          examples: [
+            "Simple Interest: Principal × Rate × Time",
+            "Compound Interest: P(1 + r)^t",
+            "Loan Payment: Principal × (r(1+r)^n)/((1+r)^n-1)",
+            "Discount: Price × Discount Rate"
+          ]
+        },
+        {
+          title: "Voice Commands",
+          examples: [
+            "Say: 'convert 100 dollars to euros'",
+            "Say: 'convert 50 euros to dollars'",
+            "Say: 'calculate 5% interest on 1000 for 2 years'",
+            "Say: 'what is 20% of 80 dollars'"
+          ]
+        }
+      ]
+    }
+  };
+
+  return (
+    <div className={`min-h-screen ${getThemeClass('bg-gray-900 text-white', 'bg-gray-100 text-gray-800')} flex items-center justify-center p-4`}>
+      {/* Notes Modal (Documentation) */}
+      {showNotes && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className={`w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-lg shadow-lg ${getThemeClass('bg-gray-800', 'bg-white')}`}>
+            <div className={`p-4 flex justify-between items-center ${getThemeClass('bg-gray-700', 'bg-gray-200')} border-b ${getThemeClass('border-gray-600', 'border-gray-300')}`}>
+              <h2 className="text-xl font-bold">{notesContent[calculationType].title}</h2>
+              <button 
+                onClick={toggleNotes}
+                className={`p-2 rounded-full ${getThemeClass('bg-gray-600 hover:bg-gray-500', 'bg-gray-300 hover:bg-gray-400')}`}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-5">
+              {notesContent[calculationType].sections.map((section, idx) => (
+                <div key={idx} className="mb-6">
+                  <h3 className={`text-lg font-medium mb-3 ${getThemeClass('text-gray-300', 'text-gray-700')}`}>
+                    {section.title}
+                  </h3>
+                  <div className={`rounded-lg p-4 ${getThemeClass('bg-gray-700', 'bg-gray-200')}`}>
+                    {section.examples.map((example, i) => (
+                      <div 
+                        key={i} 
+                        className={`py-2 px-3 ${i % 2 === 0 ? getThemeClass('bg-gray-800 bg-opacity-50', 'bg-gray-100') : ''} rounded my-1`}
+                      >
+                        {example}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              <div className="mt-5 p-4 rounded-lg border border-dashed border-opacity-50 text-sm italic text-center">
+                Tip: Click the voice button (🎤) and speak your calculation clearly for best results.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${getThemeClass('bg-gray-800', 'bg-gray-200')}`}>
+        {/* Calculator Header */}
+        <div className={`p-4 flex justify-between items-center ${getThemeClass('bg-gray-700', 'bg-gray-300')}`}>
+          <h2 className="text-lg font-bold">RNS Voice Calculator</h2>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleNotes}
+              className={`p-2 rounded-full ${getThemeClass('bg-gray-600 text-white', 'bg-gray-400 text-gray-800')}`}
+              title="Documentation"
+            >
+              📋
+            </button>
             <button 
               onClick={toggleTheme}
-              className={`p-2 rounded-full ${getThemeClass('bg-gray-700 text-white', 'bg-white text-gray-800')} shadow`}
+              className={`p-2 rounded-full ${getThemeClass('bg-gray-600 text-white', 'bg-gray-400 text-gray-800')}`}
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
           </div>
-
-          {/* Calculator Panel */}
-          <div className={`rounded-xl shadow-xl overflow-hidden mb-6 ${getThemeClass('bg-gray-800', 'bg-white')}`}>
-            {/* Tab Navigation */}
-            <div className="flex mb-2 border-b border-opacity-20 border-gray-500">
-              <button 
-                className={`flex-1 py-3 px-4 font-medium transition-colors ${calculationType === 'scientific' 
-                  ? getThemeClass('bg-blue-600 text-white', 'bg-blue-500 text-white') 
-                  : getThemeClass('bg-gray-800 text-gray-300', 'bg-gray-100 text-gray-600')}`}
-                onClick={() => setCalculationType('scientific')}
-              >
-                Scientific
-              </button>
-              <button 
-                className={`flex-1 py-3 px-4 font-medium transition-colors ${calculationType === 'area' 
-                  ? getThemeClass('bg-blue-600 text-white', 'bg-blue-500 text-white') 
-                  : getThemeClass('bg-gray-800 text-gray-300', 'bg-gray-100 text-gray-600')}`}
-                onClick={() => setCalculationType('area')}
-              >
-                Area
-              </button>
-              <button 
-                className={`flex-1 py-3 px-4 font-medium transition-colors ${calculationType === 'money' 
-                  ? getThemeClass('bg-blue-600 text-white', 'bg-blue-500 text-white') 
-                  : getThemeClass('bg-gray-800 text-gray-300', 'bg-gray-100 text-gray-600')}`}
-                onClick={() => setCalculationType('money')}
-              >
-                Money
-              </button>
-            </div>
-            
-            {/* Manual Input */}
-            <div className={`p-6 ${getThemeClass('bg-gray-800 bg-opacity-90', 'bg-white')}`}>
-              <p className={`mb-2 ${getThemeClass('text-gray-400', 'text-gray-500')}`}>Manual Input:</p>
-              <div className="flex">
-                <input
-                  type="text"
-                  value={manualInput}
-                  onChange={handleInputChange}
-                  onKeyPress={handleKeyPress}
-                  className={`flex-1 p-3 rounded-l border ${getThemeClass('bg-gray-700 border-gray-600 text-white', 'bg-white border-gray-300 text-gray-800')}`}
-                  placeholder={calculationType === 'scientific' ? "Enter expression (e.g. 2+3*4)" : 
-                              calculationType === 'area' ? "e.g. area of circle with radius 5" :
-                              "e.g. convert 100 dollars to euros"}
-                />
-                <button
-                  onClick={processManualInput}
-                  className={`px-4 rounded-r font-medium ${getThemeClass('bg-blue-600 hover:bg-blue-500', 'bg-blue-500 hover:bg-blue-400')} text-white`}
-                >
-                  Calculate
-                </button>
+        </div>
+        
+        {/* Display Screen */}
+        <div className={`p-4 ${getThemeClass('bg-gray-900', 'bg-gray-100')}`}>
+          {/* Input Display */}
+          <div className={`mb-2 p-3 font-mono rounded ${getThemeClass('bg-gray-800 text-gray-200', 'bg-white text-gray-800')}`}>
+            {manualInput || transcript || "0"}
+          </div>
+          
+          {/* Result Display */}
+          <div className={`p-3 text-right text-2xl font-bold rounded ${getThemeClass('bg-gray-800', 'bg-white')}`}>
+            {processingAnimation ? (
+              <div className="flex justify-end items-center gap-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
               </div>
-              
-              {/* Toggle Scientific Keypad */}
-              {calculationType === 'scientific' && (
-                <div className="mt-2">
-                  <button
-                    onClick={() => setShowScientificKeypad(!showScientificKeypad)}
-                    className={`text-sm py-1 px-3 rounded ${getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-gray-200 hover:bg-gray-300')}`}
-                  >
-                    {showScientificKeypad ? 'Hide Keypad' : 'Show Keypad'}
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {/* Scientific Keypad */}
-            {showScientificKeypad && calculationType === 'scientific' && (
-              <div className={`p-4 ${getThemeClass('bg-gray-800', 'bg-gray-100')}`}>
-                <div className="grid grid-cols-4 gap-2 mb-4">
-                  {scientificFunctions.map((func, index) => (
-                    <button
-                      key={index}
-                      onClick={() => insertOperation(func.insertValue)}
-                      className={`p-2 text-center rounded ${getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-white hover:bg-gray-200')} transition-colors`}
-                    >
-                      {func.symbol}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="grid grid-cols-4 gap-2">
-                  {basicKeypadButtons.map((button, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleKeypadButtonClick(button.value)}
-                      className={`p-3 text-center rounded ${button.symbol === '=' 
-                        ? getThemeClass('bg-blue-600 hover:bg-blue-500', 'bg-blue-500 hover:bg-blue-400') + ' text-white' 
-                        : getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-white hover:bg-gray-200')}`}
-                    >
-                      {button.symbol}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            ) : (
+              <span className={getThemeClass('text-gray-100', 'text-gray-800')}>{result || "0"}</span>
             )}
-            
-            {/* Voice Input Display */}
-            <div className={`p-6 ${getThemeClass('bg-gray-800 bg-opacity-70', 'bg-gray-100')}`}>
-              <p className={`mb-2 ${getThemeClass('text-gray-400', 'text-gray-500')}`}>Voice Input:</p>
-              <div className="flex items-center">
-                <p className="font-medium text-lg">{transcript || "Speak after clicking the microphone button"}</p>
-                {listening && (
-                  <div className="ml-4 flex space-x-1">
-                    <div className="w-2 h-6 bg-blue-400 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-8 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-4 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Result Display */}
-            <div className={`p-6 ${getThemeClass('bg-gray-900 bg-opacity-70', 'bg-blue-50')}`}>
-              <p className={`mb-2 ${getThemeClass('text-gray-400', 'text-gray-500')}`}>Result:</p>
-              <div className="min-h-16 flex items-center">
-                {processingAnimation ? (
-                  <div className="flex items-center">
-                    <div className="mr-3">Processing</div>
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className={`font-bold text-2xl ${result ? getThemeClass('text-blue-400', 'text-blue-600') : ''}`}>
-                    {result || "Result will appear here"}
-                  </p>
-                )}
-              </div>
-            </div>
           </div>
-          
-          {/* Control Buttons */}
-          <div className="flex gap-4 mb-8 justify-center">
+        </div>
+        
+        {/* Calculator Type Tabs */}
+        <div className="grid grid-cols-3 border-b border-gray-700">
+          {['scientific', 'area', 'money'].map((type) => (
             <button 
-              className={`p-6 rounded-full ${listening 
-                ? 'bg-red-500 text-white' 
-                : getThemeClass('bg-blue-600 hover:bg-blue-500', 'bg-blue-500 hover:bg-blue-400')} text-white shadow-lg transition-colors`}
-              onClick={startListening}
-              disabled={listening}
+              key={type}
+              className={`py-2 text-center capitalize ${
+                calculationType === type 
+                  ? getThemeClass('bg-gray-700 text-white', 'bg-gray-400 text-white') 
+                  : getThemeClass('bg-gray-800 text-gray-400', 'bg-gray-300 text-gray-600')
+              }`}
+              onClick={() => setCalculationType(type)}
             >
-              <div className="flex items-center">
-                <span className="text-2xl mr-2">🎤</span>
-                <span>{listening ? 'Listening...' : 'Speak'}</span>
-              </div>
+              {type}
             </button>
-            
-            <button 
-              className={`p-6 rounded-full ${getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-gray-200 hover:bg-gray-300')} shadow transition-colors`}
-              onClick={clearCalculator}
-            >
-              <div className="flex items-center">
-                <span className="text-xl mr-2">🗑️</span>
-                <span>Clear</span>
-              </div>
-            </button>
+          ))}
+        </div>     
+        {/* Scientific Functions Row */}
+        {calculationType === 'scientific' && showScientificKeypad && (
+          <div className={`grid grid-cols-4 gap-1 p-2 ${getThemeClass('bg-gray-800', 'bg-gray-300')}`}>
+            {scientificFunctions.map((func, index) => (
+              <button
+                key={index}
+                onClick={() => insertOperation(func.insertValue)}
+                className={`p-3 text-center rounded ${getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-gray-400 hover:bg-gray-500')} transition-colors`}
+              >
+                {func.symbol}
+              </button>
+            ))}
           </div>
+        )}
+        
+        {/* Main Keypad */}
+        <div className={`grid grid-cols-4 gap-1 p-2 ${getThemeClass('bg-gray-800', 'bg-gray-300')}`}>
+          {basicKeypadButtons.map((button, index) => (
+            <button
+              key={index}
+              onClick={() => handleKeypadButtonClick(button.value)}
+              className={`p-4 text-center text-lg font-medium rounded ${
+                button.symbol === '=' 
+                  ? getThemeClass('bg-gray-600 hover:bg-gray-500', 'bg-gray-500 hover:bg-gray-600') + ' text-white' 
+                  : ['÷', '×', '-', '+'].includes(button.symbol)
+                    ? getThemeClass('bg-gray-700 hover:bg-gray-600', 'bg-gray-400 hover:bg-gray-500')
+                    : getThemeClass('bg-gray-900 hover:bg-gray-700', 'bg-white hover:bg-gray-200')
+              }`}
+            >
+              {button.symbol}
+            </button>
+          ))}
+        </div>
+        
+        {/* Voice Control & Clear */}
+        <div className={`flex p-3 ${getThemeClass('bg-gray-700', 'bg-gray-300')}`}>
+          <button 
+            className={`flex-1 py-3 mr-1 rounded flex items-center justify-center ${
+              listening 
+                ? 'bg-gray-500 text-white' 
+                : getThemeClass('bg-gray-600 hover:bg-gray-500', 'bg-gray-400 hover:bg-gray-500')
+            } text-white transition-colors`}
+            onClick={startListening}
+            disabled={listening}
+          >
+            <span className="text-xl mr-2">🎤</span>
+            <span>{listening ? 'Listening...' : 'Voice'}</span>
+          </button>
           
-          {/* History and Help Panel */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* History Section */}
-            <div className={`${getThemeClass('bg-gray-800', 'bg-white')} rounded-xl shadow-lg overflow-hidden`}>
-              <div className="p-4 font-medium border-b border-opacity-20 border-gray-500">
-                <h2 className="text-lg">Calculation History</h2>
-              </div>
-              <div className="max-h-64 overflow-y-auto">
-                {history.length === 0 ? (
-                  <p className={`p-4 ${getThemeClass('text-gray-400', 'text-gray-500')}`}>No calculations yet</p>
-                ) : (
-                  history.map((item, index) => (
-                    <div key={index} className={`p-4 ${index % 2 === 0 ? getThemeClass('bg-gray-700 bg-opacity-30', 'bg-gray-50') : ''}`}>
-                      <div className="flex justify-between items-start mb-1">
-                        <p className={`text-sm ${getThemeClass('text-gray-400', 'text-gray-600')}`}>
-                          {item.isManual ? '⌨️' : '🎤'} {item.input}
-                        </p>
-                        <span className={`text-xs ${getThemeClass('text-gray-500', 'text-gray-400')}`}>{item.timestamp}</span>
-                      </div>
-                      <p className={`font-medium ${getThemeClass('text-blue-400', 'text-blue-600')}`}>{item.result}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            
-            {/* Help Panel */}
-            <div className={`${getThemeClass('bg-gray-800', 'bg-white')} rounded-xl shadow-lg overflow-hidden`}>
-              <div className="p-4 font-medium border-b border-opacity-20 border-gray-500">
-                <h2 className="text-lg">Help & Examples</h2>
-              </div>
-              
-              <div className="p-4">
-                {calculationType === 'scientific' && (
-                  <div>
-                    <h3 className={`font-medium mb-2 ${getThemeClass('text-blue-400', 'text-blue-600')}`}>Scientific Calculations:</h3>
-                    <p className="mb-2 text-sm">Type expressions directly or use the keypad. For voice, try:</p>
-                    <ul className={`text-sm ${getThemeClass('text-gray-300', 'text-gray-700')} space-y-1`}>
-                      <li>"2 plus 3 minus 1"</li>
-                      <li>"sine of 30 degrees"</li>
-                      <li>"square root of 16"</li>
-                      <li>"log of 100"</li>
-                      <li>"5 to the power of 3"</li>
-                      <li>"factorial of 5"</li>
-                      <li>"absolute value of -10"</li>
-                    </ul>
+          <button 
+            className={`flex-1 py-3 ml-1 rounded ${getThemeClass('bg-gray-600 hover:bg-gray-500', 'bg-gray-400 hover:bg-gray-500')} text-white transition-colors`}
+            onClick={clearCalculator}
+          >
+            Clear
+          </button>
+        </div>
+        
+        {/* History Toggle */}
+        <div className={`p-2 ${getThemeClass('bg-gray-800', 'bg-gray-200')} border-t border-gray-700`}>
+          <button
+            className={`w-full py-2 text-center text-sm ${getThemeClass('text-gray-400 hover:text-gray-300', 'text-gray-600 hover:text-gray-800')}`}
+            onClick={() => document.getElementById('history-panel').classList.toggle('hidden')}
+          >
+            History ▾
+          </button>
+        </div>
+        
+        {/* History Panel (Hidden by default) */}
+        <div id="history-panel" className="hidden">
+          <div className={`max-h-48 overflow-y-auto ${getThemeClass('bg-gray-900', 'bg-white')}`}>
+            {history.length === 0 ? (
+              <p className={`p-4 ${getThemeClass('text-gray-500', 'text-gray-400')}`}>No calculations yet</p>
+            ) : (
+              history.map((item, index) => (
+                <div key={index} className={`p-3 ${index % 2 === 0 ? getThemeClass('bg-gray-800', 'bg-gray-100') : ''} border-b border-gray-700`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-sm truncate">{item.input}</p>
+                    <span className={`text-xs ${getThemeClass('text-gray-500', 'text-gray-400')}`}>{item.timestamp}</span>
                   </div>
-                )}
-                
-                {calculationType === 'area' && (
-                  <div>
-                    <h3 className={`font-medium mb-2 ${getThemeClass('text-blue-400', 'text-blue-600')}`}>Area Calculations:</h3>
-                    <ul className={`text-sm ${getThemeClass('text-gray-300', 'text-gray-700')} space-y-1`}>
-                      <li>"area of square with side 5"</li>
-                      <li>"area of rectangle with length 4 and width 7"</li>
-                      <li>"area of circle with radius 3"</li>
-                      <li>"area of triangle with base 6 and height 8"</li>
-                      <li>"area of trapezoid with a 5 b 7 height 4"</li>
-                      <li>"area of ellipse with a 5 and b 3"</li>
-                    </ul>
-                  </div>
-                )}
-                
-                {calculationType === 'money' && (
-                  <div>
-                    <h3 className={`font-medium mb-2 ${getThemeClass('text-blue-400', 'text-blue-600')}`}>Money Calculations:</h3>
-                    <ul className={`text-sm ${getThemeClass('text-gray-300', 'text-gray-700')} space-y-1`}>
-                      <li>"convert 100 dollars to euros"</li>
-                      <li>"convert 50 euros to dollars"</li>
-                      <li>"calculate 5% interest on 100 for 2 years"</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
+                  <p className="font-medium">{item.result}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 export default AICalculator;
